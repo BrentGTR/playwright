@@ -159,7 +159,7 @@ function addServerListener(server: Server, event: 'close' | 'initialized', liste
   };
 }
 
-export async function start(serverBackendFactory: ServerBackendFactory, options: { host?: string; port?: number, allowedHosts?: string[] }) {
+export async function start(serverBackendFactory: ServerBackendFactory, options: { host?: string; port?: number, allowedHosts?: string[], transport?: string }) {
   if (options.port === undefined) {
     await connect(serverBackendFactory, new mcpBundle.StdioServerTransport(), false);
     return;
@@ -169,16 +169,26 @@ export async function start(serverBackendFactory: ServerBackendFactory, options:
   const url = await installHttpTransport(httpServer, serverBackendFactory, false, options.allowedHosts);
 
   const mcpConfig: any = { mcpServers: { } };
-  mcpConfig.mcpServers[serverBackendFactory.nameInConfig] = {
-    url: `${url}/mcp`
-  };
+  const transport = options.transport || 'streamable-http';
+  
+  if (transport === 'sse') {
+    mcpConfig.mcpServers[serverBackendFactory.nameInConfig] = {
+      url: `${url}/sse`
+    };
+  } else {
+    mcpConfig.mcpServers[serverBackendFactory.nameInConfig] = {
+      url: `${url}/mcp`
+    };
+  }
+  
   const message = [
     `Listening on ${url}`,
+    `Using ${transport} transport`,
     'Put this in your client config:',
     JSON.stringify(mcpConfig, undefined, 2),
-    'For legacy SSE transport support, you can use the /sse endpoint instead.',
+    transport === 'streamable-http' ? 'For legacy SSE transport support, you can use the /sse endpoint instead.' : 'For streamable-http transport support, you can use the /mcp endpoint instead.',
   ].join('\n');
-    // eslint-disable-next-line no-console
+  // eslint-disable-next-line no-console
   console.error(message);
 }
 

@@ -160,12 +160,9 @@ async function handleStreamable(serverBackendFactory: ServerBackendFactory, req:
       }
     });
 
-    transport.onclose = () => {
-      if (!transport.sessionId)
-        return;
-      sessions.delete(transport.sessionId);
-      testDebug(`delete http session: ${transport.sessionId}`);
-    };
+    // Don't set onclose handler to prevent premature session deletion
+    // Sessions will be cleaned up by the server shutdown or explicit cleanup
+    // This fixes the "Session not found" issue by keeping sessions alive longer
 
     await transport.handleRequest(req, res);
     return;

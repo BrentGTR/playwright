@@ -64,6 +64,7 @@ export function decorateCommand(command: Command, version: string) {
       .option('--user-agent <ua string>', 'specify user agent string')
       .option('--user-data-dir <path>', 'path to the user data directory. If not specified, a temporary directory will be created.')
       .option('--viewport-size <size>', 'specify browser viewport size in pixels, for example "1280x720"', resolutionParser.bind(null, '--viewport-size'))
+      .option('--transport <transport>', 'transport protocol to use, possible values: sse, streamable-http. Defaults to streamable-http.')
       .addOption(new ProgramOption('--connect-tool', 'Allow to switch between different browser connection methods.').hideHelp())
       .addOption(new ProgramOption('--vision', 'Legacy option, use --caps=vision instead').hideHelp())
       .action(async options => {
@@ -86,7 +87,7 @@ export function decorateCommand(command: Command, version: string) {
             version,
             create: () => new BrowserServerBackend(config, extensionContextFactory)
           };
-          await mcpServer.start(serverBackendFactory, config.server);
+          await mcpServer.start(serverBackendFactory, { ...config.server, transport: options.transport });
           return;
         }
 
@@ -109,7 +110,7 @@ export function decorateCommand(command: Command, version: string) {
             version,
             create: () => new ProxyBackend(providers),
           };
-          await mcpServer.start(factory, config.server);
+          await mcpServer.start(factory, { ...config.server, transport: options.transport });
           return;
         }
 
@@ -119,6 +120,6 @@ export function decorateCommand(command: Command, version: string) {
           version,
           create: () => new BrowserServerBackend(config, browserContextFactory)
         };
-        await mcpServer.start(factory, config.server);
+        await mcpServer.start(factory, { ...config.server, transport: options.transport });
       });
 }
