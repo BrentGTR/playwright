@@ -160,9 +160,11 @@ async function handleStreamable(serverBackendFactory: ServerBackendFactory, req:
       }
     });
 
-    // Don't set onclose handler to prevent premature session deletion
-    // Sessions will be cleaned up by the server shutdown or explicit cleanup
-    // This fixes the "Session not found" issue by keeping sessions alive longer
+    // REMOVED: transport.onclose handler that was causing premature session deletion
+    // The original code deleted sessions immediately when HTTP connections closed,
+    // causing "Session not found" errors for multi-step operations like screenshots.
+    // Sessions are now cleaned up only on server shutdown or explicit cleanup,
+    // allowing proper session persistence for complex browser automation workflows.
 
     await transport.handleRequest(req, res);
     return;

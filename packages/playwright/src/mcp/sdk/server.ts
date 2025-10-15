@@ -170,7 +170,7 @@ export async function start(serverBackendFactory: ServerBackendFactory, options:
 
   const mcpConfig: any = { mcpServers: { } };
   const transport = options.transport || 'streamable-http';
-  
+
   if (transport === 'sse') {
     mcpConfig.mcpServers[serverBackendFactory.nameInConfig] = {
       url: `${url}/sse`
@@ -180,7 +180,7 @@ export async function start(serverBackendFactory: ServerBackendFactory, options:
       url: `${url}/mcp`
     };
   }
-  
+
   const message = [
     `Listening on ${url}`,
     `Using ${transport} transport`,
