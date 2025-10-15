@@ -237,7 +237,10 @@ class PersistentContextFactory implements BrowserContextFactory {
     // Hesitant putting hundreds of files into the user's workspace, so using it for hashing instead.
     const rootPath = firstRootPath(clientInfo);
     const rootPathToken = rootPath ? `-${createHash(rootPath)}` : '';
-    const result = path.join(dir, `mcp-${browserToken}${rootPathToken}`);
+    // Add session-specific identifier to ensure isolation between different MCP sessions
+    // This prevents state pollution when multiple clients connect with the same name/version
+    const sessionId = crypto.randomUUID();
+    const result = path.join(dir, `mcp-${browserToken}${rootPathToken}-${sessionId}`);
     await fs.promises.mkdir(result, { recursive: true });
     return result;
   }
