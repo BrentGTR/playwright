@@ -104,6 +104,19 @@ export async function installHttpTransport(httpServer: http.Server, serverBacken
       await handleStreamable(serverBackendFactory, req, res, streamableSessions);
   });
 
+  // Cleanup pending timeouts on server shutdown to prevent memory leaks
+  httpServer.on('close', () => {
+    // Clear all pending cleanup timeouts
+    for (const transport of streamableSessions.values()) {
+      const timeout = (transport as any).cleanupTimeout;
+      if (timeout)
+        clearTimeout(timeout);
+
+    }
+    streamableSessions.clear();
+    sseSessions.clear();
+  });
+
   return `${url}${pathPrefix}`;
 }
 
@@ -166,11 +179,22 @@ async function handleStreamable(serverBackendFactory: ServerBackendFactory, req:
       if (!transport.sessionId)
         return;
       const sessionId = transport.sessionId; // Capture sessionId for closure
-      // Delay cleanup to allow ongoing operations to complete
-      setTimeout(() => {
-        sessions.delete(sessionId);
-        testDebug(`delete http session: ${sessionId}`);
-      }, 5000); // 5 second delay
+      const cleanupDelay = parseInt(process.env.PLAYWRIGHT_MCP_SESSION_CLEANUP_DELAY || '5000', 10);
+
+      // Store timeout reference for cleanup on server shutdown
+      const cleanupTimeout = setTimeout(() => {
+        try {
+          if (sessions.has(sessionId)) {
+            sessions.delete(sessionId);
+            testDebug(`delete http session: ${sessionId}`);
+          }
+        } catch (error) {
+          testDebug(`error during session cleanup: ${error}`);
+        }
+      }, cleanupDelay);
+
+      // Store timeout reference on transport for cleanup
+      (transport as any).cleanupTimeout = cleanupTimeout;
     };
 
     await transport.handleRequest(req, res);
