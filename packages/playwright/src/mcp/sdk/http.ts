@@ -179,7 +179,7 @@ async function handleStreamable(serverBackendFactory: ServerBackendFactory, req:
       if (!transport.sessionId)
         return;
       const sessionId = transport.sessionId; // Capture sessionId for closure
-      const cleanupDelay = parseInt(process.env.PLAYWRIGHT_MCP_SESSION_CLEANUP_DELAY || '5000', 10);
+      const cleanupDelay = parseInt(process.env.PLAYWRIGHT_MCP_SESSION_CLEANUP_DELAY || '5000', 10) || 5000;
 
       // Store timeout reference for cleanup on server shutdown
       const cleanupTimeout = setTimeout(() => {
