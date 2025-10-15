@@ -160,11 +160,18 @@ async function handleStreamable(serverBackendFactory: ServerBackendFactory, req:
       }
     });
 
-    // REMOVED: transport.onclose handler that was causing premature session deletion
-    // The original code deleted sessions immediately when HTTP connections closed,
-    // causing "Session not found" errors for multi-step operations like screenshots.
-    // Sessions are now cleaned up only on server shutdown or explicit cleanup,
-    // allowing proper session persistence for complex browser automation workflows.
+    // Use delayed cleanup to prevent premature session deletion
+    // This allows multi-step operations to complete while still cleaning up resources
+    transport.onclose = () => {
+      if (!transport.sessionId)
+        return;
+      const sessionId = transport.sessionId; // Capture sessionId for closure
+      // Delay cleanup to allow ongoing operations to complete
+      setTimeout(() => {
+        sessions.delete(sessionId);
+        testDebug(`delete http session: ${sessionId}`);
+      }, 5000); // 5 second delay
+    };
 
     await transport.handleRequest(req, res);
     return;
